@@ -21,6 +21,18 @@ nolanPoints = nolanPoints;
 deltaR = batPoints(:,1) - nolanPoints(:,1);
 deltaC = batPoints(:,2) - nolanPoints(:,2);
 
+
+%% load the other image
+
+img = (imread('project2_testimg.png'));
+p1 = [1 1; 257 1; 1 257; 257 257; 129 129];
+p2(1) = {[1 1; 257 1; 1 257; 257 257; 129 33]};
+p2(2) = {[1 1; 257 1; 1 257; 257 257; 33 129]};
+p2(3) = {[1 1; 257 1; 1 257; 257 257; 129 223]};
+p2(4) = {[1 1; 257 1; 1 257; 257 257; 223 129]};
+p2(5) = {cell2mat(p2(1))};
+tri = delaunay(p1(:,1),p1(:,2));
+
 % sizes
 [numR, numC,~] = size(myNC);
 

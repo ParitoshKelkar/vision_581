@@ -29,7 +29,7 @@ px_ids = 1 : numR*numC;
 % tsearchn works with cartesian space
 % [cartX, cartY] = toCartesian(pixelR, pixelC);
 
-tri_ids = tsearchn(meanPts,tri,[pixelC',pixelR']); % this is the swap 
+tri_ids = tsearchn([im1_pts(:,1) im1_pts(:,2)],tri,[pixelC',pixelR']); % this is the swap 
 %because cpselect returns stuff in a wierd coordinate frame
 
 cross_dissolve = dissolve_frac;
