@@ -73,8 +73,7 @@ for frameIter = 1: length(warp_frac)
     % calcualte A
     % find a triangle for every pt
     inTri = tri_ids(pixelIds);
-    inTri_vertices = tri(inTri,:);
-    
+    inTri_vertices = tri(inTri,:);    
     
     % get all the required triangle vertex coordinate
     tri_vertices_im(:,:,1) = intermediate_cp(inTri_vertices(:,1),:);
@@ -83,7 +82,8 @@ for frameIter = 1: length(warp_frac)
     
     
     
-    
+end
+
     
    
     

@@ -1,5 +1,5 @@
 %% playback
-
+warp_frac = 0.01:0.01:0.99
 frames = length(warp_frac);
 figure;
 hold on;
