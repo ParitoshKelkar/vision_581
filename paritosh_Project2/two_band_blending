@@ -1,0 +1,19 @@
+%% this script is for implementing 2 band blending
+
+% read the images
+i1 = imread('joker.jpeg');
+i2 = imread('federer.jpeg');
+
+% define the window size 
+window = 100; % on each side
+
+% define a smoothing kernel with some standard deviation and variance
+STD_DEV = 66;
+smoothing_kernel = fspecial('gaussian',window, STD_DEV);
+
+% apply the filter to the images 
+i1_filt = imfilter(i1,smoothing_kernel,'replicate');
+i2_filt = imfilter(i2,smoothing_kernel,'replicate');
+
+
+
