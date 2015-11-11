@@ -16,7 +16,7 @@ global visualizeRANSAC_result;
 
 show_ANMS = 0;
 visualizeRANSAC = 0; % sampling
-visualizeMatched = 0;
+visualizeMatched = 1;
 visualizeHomography = 0;
 visualizeRANSAC_result = 1;
 
@@ -28,7 +28,7 @@ if (visualizeRANSAC_result)
 end
 
 % Load Images
-filePath = '/home/pari/Desktop/Courses/Vision/Project3/image_data_cliff';
+filePath = '/mnt/castor/seas_home/p/paritosh/myGit/vision_581/Project3/image_data_pittsburgh';
 buildingScene = imageSet(filePath);
 
 % Read the first image from the image set.
@@ -76,10 +76,13 @@ im1_desc_linear = feat_desc(I_gray, im1_corn_r, im1_corn_c);
 tforms(buildingScene.Count) = projective2d(eye(3));
  
 
-% Iterate over remaining image pairs
-for n = 2:buildingScene.Count
+prev_desc_linear = im1_desc_linear;
+prev_desc_cartesian = im1_filterPts_cartesian;
 
- 
+% Iterate over remaining image pairs
+for n = 2:buildingScene.Count-1
+
+
     % Read I(n).
     I = read(buildingScene, n);
     I2 = I;
@@ -122,7 +125,7 @@ for n = 2:buildingScene.Count
     
    im2_filteredPts_cartesian = [im2_filterPts_cartesianR, im2_filterPts_cartesianC];
     % Find correspondences between I(n) and I(n-1).
-   match_results = feat_match(im1_desc_linear, im2_desc_linear);
+   match_results = feat_match(prev_desc_linear, im2_desc_linear);
 
    % filter match_results
    valid_matches = find(match_results > -1);
@@ -135,7 +138,7 @@ for n = 2:buildingScene.Count
    % verify matched points 
    if (visualizeMatched)
        figure; ax = axes;
-       showMatchedFeatures(rgb2gray(I1), rgb2gray(I2),fliplr(im1_filterPts_cartesian(valid_matches,:)), fliplr(mappedTo_cart),...
+       showMatchedFeatures(rgb2gray(I1), rgb2gray(I2),fliplr(prev_desc_cartesian(valid_matches,:)), fliplr(mappedTo_cart),...
            'montage', 'Parent', ax);
        title(ax, 'initial Candidate point matches');
        legend(ax, 'Matched points 1','Matched points 2');
@@ -143,7 +146,7 @@ for n = 2:buildingScene.Count
    
    
    
-   source_pts = im1_filterPts_cartesian(valid_matches,:);
+   source_pts = prev_desc_cartesian(valid_matches,:);
    dest_pts = mappedTo_cart;
 
 
@@ -151,8 +154,8 @@ for n = 2:buildingScene.Count
    tforms(n) = estimateGeometricTransform(fliplr(dest_pts), fliplr(source_pts),...
        'projective', 'Confidence', 99.9, 'MaxNumTrials', 2000);
    %
-   [H, inliers] = ransac_es_homography(dest_pts(:,1), dest_pts(:,2),...
-       source_pts(:,1), source_pts(:,2),10);
+   [H, inliers] = ransac_es_homography( dest_pts(:,1), dest_pts(:,2),...
+       source_pts(:,1), source_pts(:,2), 10);
 %    
    
    if (visualizeRANSAC_result)
@@ -165,14 +168,33 @@ for n = 2:buildingScene.Count
        title(ransac_result_ax, 'RANSAC point matches');
        legend(ransac_result_ax, 'Matched points 1','Matched points 2');
        
+       outliers = ones(size(source_pts,1),1);
+       outliers((inliers)) = 0;
+       source_outliers = source_pts(find(outliers),:);
+       dest_outliers = dest_pts(find(outliers),:);
+       shifted_outliers = [dest_outliers(:,1), dest_outliers(:,2) + numC];
+       hold on;
+       plot(ransac_result_ax,source_outliers(:,2), source_outliers(:,1), '*k');
+       plot(ransac_result_ax,shifted_outliers(:,2), shifted_outliers(:,1),'*k');
+       legend(ransac_result_ax, 'Matched points 1','Matched points 2','','Outliers');
+       hold off;
+      
        
        
    end
    
+   prev_desc_linear = im2_desc_linear;
+   prev_desc_cartesian = im2_filteredPts_cartesian;
+   
+   
+   % 
+   
    tforms(n).T = H';
    % Compute T(1) * ... * T(n-1) * T(n)
    tforms(n).T = tforms(n-1).T * tforms(n).T;
+   
 end
+
 
 imageSize = size(I);  % all the images are the same size
 
@@ -192,6 +214,12 @@ centerImageIdx = idx(centerIdx);
 
 for i = 1:numel(tforms)
     [xlim(i,:), ylim(i,:)] = outputLimits(tforms(i), [1 imageSize(2)], [1 imageSize(1)]);
+end
+
+Tinv = invert(tforms(centerImageIdx));
+
+for i = 1:numel(tforms)
+    tforms(i).T = Tinv.T * tforms(i).T;
 end
 
 % Find the minimum and maximum output limits
@@ -217,8 +245,8 @@ xLimits = [xMin xMax];
 yLimits = [yMin yMax];
 panoramaView = imref2d([height width], xLimits, yLimits);
 
-% Create the panorama.
-for i = 1:buildingScene.Count
+% Create the panorama
+for i = 1:buildingScene.Count-1
 
     I = read(buildingScene, i);
 

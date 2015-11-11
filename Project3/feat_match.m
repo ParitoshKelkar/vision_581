@@ -9,13 +9,14 @@ match_results(:,1) = desc_range';
 
 % compute distance between one point with all the other points
 distance_metric = pdist2(i1_desc, i2_desc);
+distance_metric =distance_metric.^2;
 
 % find the closest match
 [sorted_dist_mat, sorted_id] = sort(distance_metric,2);
 
 % check for confidence
 confidence = sorted_dist_mat(:,1)./sorted_dist_mat(:,2);
-confident_idx = find(confidence < 0.7);
+confident_idx = find(confidence < 0.5);
 
 % 
 match_results(confident_idx,2) = sorted_id(confident_idx,1);

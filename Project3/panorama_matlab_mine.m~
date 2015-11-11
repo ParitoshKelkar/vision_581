@@ -16,9 +16,9 @@ global visualizeRANSAC_result;
 
 show_ANMS = 0;
 visualizeRANSAC = 0; % sampling
-visualizeMatched = 0;
+visualizeMatched = 1;
 visualizeHomography = 0;
-visualizeRANSAC_result = 0;
+visualizeRANSAC_result = 1;
 
 if (visualizeRANSAC_result)
     
@@ -28,7 +28,7 @@ if (visualizeRANSAC_result)
 end
 
 % Load Images
-filePath = '/home/pari/Desktop/Courses/Vision/Project3/image_data_car';
+filePath = '/mnt/castor/seas_home/p/paritosh/myGit/vision_581/Project3/image_data_car';
 buildingScene = imageSet(filePath);
 
 % Read the first image from the image set.
@@ -76,9 +76,12 @@ im1_desc_linear = feat_desc(I_gray, im1_corn_r, im1_corn_c);
 tforms(buildingScene.Count) = projective2d(eye(3));
  
 
+prev_desc_linear = im1_desc_linear;
+prev_desc_carte
 % Iterate over remaining image pairs
-for n = 2:buildingScene.Count
+for n = 2:buildingScene.Count-1
 
+    prev_desc
  
     % Read I(n).
     I = read(buildingScene, n);
@@ -122,7 +125,7 @@ for n = 2:buildingScene.Count
     
    im2_filteredPts_cartesian = [im2_filterPts_cartesianR, im2_filterPts_cartesianC];
     % Find correspondences between I(n) and I(n-1).
-   match_results = feat_match(im1_desc_linear, im2_desc_linear);
+   match_results = feat_match(prev_desc_linear, im2_desc_linear);
 
    % filter match_results
    valid_matches = find(match_results > -1);
@@ -165,11 +168,25 @@ for n = 2:buildingScene.Count
        title(ransac_result_ax, 'RANSAC point matches');
        legend(ransac_result_ax, 'Matched points 1','Matched points 2');
        
+       outliers = ones(size(source_pts,1),1);
+       outliers((inliers)) = 0;
+       source_outliers = source_pts(find(outliers),:);
+       dest_outliers = dest_pts(find(outliers),:);
+       shifted_outliers = [dest_outliers(:,1), dest_outliers(:,2) + numC];
+       hold on;
+       plot(ransac_result_ax,source_outliers(:,2), source_outliers(:,1), '*k');
+       plot(ransac_result_ax,shifted_outliers(:,2), shifted_outliers(:,1),'*k');
+       legend(ransac_result_ax, 'Matched points 1','Matched points 2','','Outliers');
+       hold off;
+      
        
        
    end
    
-   %tforms(n).T = H';
+   
+   % 
+   
+   tforms(n).T = H';
    % Compute T(1) * ... * T(n-1) * T(n)
    tforms(n).T = tforms(n-1).T * tforms(n).T;
 end
@@ -192,6 +209,12 @@ centerImageIdx = idx(centerIdx);
 
 for i = 1:numel(tforms)
     [xlim(i,:), ylim(i,:)] = outputLimits(tforms(i), [1 imageSize(2)], [1 imageSize(1)]);
+end
+
+Tinv = invert(tforms(centerImageIdx));
+
+for i = 1:numel(tforms)
+    tforms(i).T = Tinv.T * tforms(i).T;
 end
 
 % Find the minimum and maximum output limits
@@ -218,7 +241,7 @@ yLimits = [yMin yMax];
 panoramaView = imref2d([height width], xLimits, yLimits);
 
 % Create the panorama.
-for i = 1:buildingScene.Count
+for i = 1:buildingScene.Count-1
 
     I = read(buildingScene, i);
 

@@ -34,24 +34,29 @@ p2(5) = {cell2mat(p2(1))};
 tri = delaunay(p1(:,1),p1(:,2));
 
 % sizes
+myNC = img;
+myBat = img;
+
 [numR, numC,~] = size(myNC);
+nolanPoints = p1;
+batPoints = cell2mat(p2(1));
 
 % meanPts 
-meanPtsR = nolanPoints(:,1) + 0.5.*deltaR;
-meanPtsC = nolanPoints(:,2) + 0.5.*deltaC;
-
-% preprocess the menPtsR and meanPtsC
-meanPtsR(meanPtsR < 3) = 1;
-meanPtsR(meanPtsR > 187) = 188;
-
-meanPtsC(meanPtsC < 3) = 1;
-meanPtsC(meanPtsC > 217) = 219;
-
-meanPts = [round(meanPtsR) round(meanPtsC)];
-
-
-% compute the triangulation for the mean triangle
-tri = delaunay((meanPtsR), (meanPtsC));
+% meanPtsR = nolanPoints(:,1) + 0.5.*deltaR;
+% meanPtsC = nolanPoints(:,2) + 0.5.*deltaC;
+% 
+% % preprocess the menPtsR and meanPtsC
+% meanPtsR(meanPtsR < 3) = 1;
+% meanPtsR(meanPtsR > 187) = 188;
+% 
+% meanPtsC(meanPtsC < 3) = 1;
+% meanPtsC(meanPtsC > 217) = 219;
+% 
+% meanPts = [round(meanPtsR) round(meanPtsC)];
+% 
+% 
+% % compute the triangulation for the mean triangle
+% tri = delaunay((meanPtsR), (meanPtsC));
 
 % create an array defining the pixel idx vs the triangleId
 px_ids = 1 : numR*numC;
@@ -61,8 +66,10 @@ px_ids = 1 : numR*numC;
 % tsearchn works with cartesian space
 % [cartX, cartY] = toCartesian(pixelR, pixelC);
 
-tri_ids = tsearchn(meanPts,tri,[pixelC',pixelR']); % this is the swap 
+%tri_ids = tsearchn(meanPts,tri,[pixelC',pixelR']); % this is the swap 
 %because cpselect returns stuff in a wierd coordinate frame
+
+tri_ids = tsearchn(p1,tri,[pixelC', pixelR']);
 
 warp_frac = (0.01 : 0.01 : 0.99);
 cross_dissolve = (0.01 : 0.01 : 0.99);

@@ -15,7 +15,7 @@ list = (1: length(sourceR));
 maxNumInliers = 0;
 
 %say that the max number of iterations that we will need = 100
-maxIter = 200;
+maxIter = 400;
 
 % visual handles
 if (visualizeRANSAC)
@@ -91,8 +91,11 @@ for iterRANSAC = 1 : maxIter
         
         inlierSet = source_pts(bestInliers_id,:);
         corr_inlierSet = dest_pts(bestInliers_id,:);
-        bestH_post = est_homography(corr_inlierSet(:,2), corr_inlierSet(:,1),...
-                                    inlierSet(:,2), inlierSet(:,1));
+         bestH_post = est_homography(corr_inlierSet(:,2), corr_inlierSet(:,1),...
+                                   inlierSet(:,2), inlierSet(:,1));
+         bestH_post = inv(bestH_post);
+%          bestH_post = estimateGeometricTransform(fliplr(corr_inlierSet), fliplr(inlierSet),...
+%         'projective', 'Confidence', 99.9, 'MaxNumTrials', 2000);
 
         
         
