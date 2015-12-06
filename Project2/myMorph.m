@@ -1,7 +1,7 @@
 %% This script takes up the triangulation in the fashion that it should have been probably done
 
 
-clear all
+clear all 
 close all
 
 % misc parameters
@@ -9,12 +9,12 @@ movieTime = 3;
 
 % load the points
 load('myBat.mat');
-myBat = im2double(myBat);
+myBat = im2double(myBat);'sam
 load('batPoints_preProcess.mat'); % batman
 batPoints = batPoints;
 
 load('myNC.mat');
-myNC = im2double(myNC);
+myNC = im2double(myNC);s
 load('nolanPoints_preProcess.mat'); % nolan
 nolanPoints = nolanPoints;
 
