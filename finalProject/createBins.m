@@ -48,13 +48,14 @@ myfun = @testCellFun;
 
 for n = 1: dataSet.Count    
     
+
     tic
-    
     % resize a bit
     currImg = double(read(dataSet,n));
     currImg = imresize(currImg, [RESIZE_R RESIZE_C]);
     
     % calculate the gradient(keep max over each channel at that pixel)
+    
     [ix, iy] = gradient(currImg);
     ix = max(ix,[],3);
     iy = max(iy,[],3);
@@ -65,7 +66,10 @@ for n = 1: dataSet.Count
     % change the range of the angles
     angles(angles > 179 ) = angles(angles > 179) - 179;
     angles(angles <  0) = angles(angles < 0) + 179;
-                            
+    angles(angles < 10) = 10;
+    angles(angles > 170) = 169;
+    angles = angles + 10;
+    
     % the magnitude of the gradient - arranged by cell
     magGradient = sqrt(ix.*ix + iy.*iy);       
     
@@ -76,8 +80,8 @@ for n = 1: dataSet.Count
     magGradient = reshape(magGradient, [NUM_CELLS,CELL_SIZE*CELL_SIZE]);    
     
     % to this mag matrix, obtain the quotient and remainder
-    binCentres_rows = 1 + floor(magGradient./20);
-    R = 1 - rem(magGradient,20)./20;
+    binCentres_rows = floor(reshapedAngles./20);
+    R = 1 - rem(reshapedAngles,20)./20;
     votedMag_lower = magGradient.*R;
     
     
@@ -91,14 +95,14 @@ for n = 1: dataSet.Count
                             [NUM_CELLS*CELL_SIZE*CELL_SIZE, 1]);
     % clear storage
     
-    storage  = 0;
+    
     
     accBins = sum(storage,3);
     storage = clearStorage;
     
     % do the same shit for the upper part of the bilinear interpolation
-    binCentres_rows = 2 + floor(magGradient./20);
-    R = rem(magGradient,20)./20;
+    binCentres_rows = ceil(reshapedAngles./20);
+    R = rem(reshapedAngles,20)./20;
     votedMag_upper = magGradient.*R;
     
     % storage ids - upper part of the bilinear interpolation
@@ -107,7 +111,7 @@ for n = 1: dataSet.Count
                             [NUM_CELLS*CELL_SIZE*CELL_SIZE, 1]) - 1);
                         
     
-    storage(storage_ids) = reshape(votedMag_lower,...
+    storage(storage_ids) = reshape(votedMag_upper,...
                             [NUM_CELLS*CELL_SIZE*CELL_SIZE, 1]);
     
     
@@ -123,10 +127,10 @@ for n = 1: dataSet.Count
     tempBins = cell2mat(tempBins);
     hog_features  = reshape(tempBins,[1,BLOCKM_R*BLOCKM_R*4*NUM_BINS]);
     
-    toc
-    tic
+   toc
+   tic
     [u,v] = extractHOGFeatures(currImg);
-    toc
+toc
     
 end
 
