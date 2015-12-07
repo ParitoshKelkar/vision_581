@@ -128,6 +128,5 @@ for n = 1: dataSet.Count
     [u,v] = extractHOGFeatures(currImg);
     toc
     
-
 end
 
