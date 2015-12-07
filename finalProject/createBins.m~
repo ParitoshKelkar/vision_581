@@ -7,6 +7,8 @@ SET_PARAMS;
 % create the mag, idxing template - gives us 144*9 matrix - (36*36)
 sampleImg = read(dataSet,1);
 [numR, numC,~] = size(sampleImg);
+samplImg = imresize(currImg, [RESIZE_R RESIZE_C]);
+
 im_id_template  = reshape((1:RESIZE_C*RESIZE_R)',[RESIZE_R, RESIZE_C]);
 
 % get the NUM_CELLS*CELL_SIZE by CELL_SIZE matrix
@@ -30,6 +32,7 @@ template_cell_idx = reshape((1:NUM_CELLS*CELL_SIZE*CELL_SIZE),NUM_CELLS,...
 cC =cC';
 cR = cR';
 
+clearStorage = zeros(NUM_CELLS,CELL_SIZE*CELL_SIZE,NUM_BINS);
 storage =  zeros(NUM_CELLS,CELL_SIZE*CELL_SIZE,NUM_BINS);
 
 % define the block layout - in terms of cell_idx
@@ -41,12 +44,11 @@ blockIds_spread = repmat(blockIds,1,4);
 blockIncrement_spread = repmat(blockIncrement,(BLOCKM_R)*(BLOCKM_R),1);
 blockLayout = blockIncrement_spread + blockIds_spread;
 
-
-
+myfun = @testCellFun;
 
 for n = 1: dataSet.Count    
     
-    
+    tic
     
     % resize a bit
     currImg = double(read(dataSet,n));
@@ -61,8 +63,8 @@ for n = 1: dataSet.Count
                              % made an edge - should not make a difference
                             
     % change the range of the angles
-    angles(angles > 180 ) = angles(angles > 180) - 180;
-    angles(angles <  0) = angles(angles < 0) + 180;
+    angles(angles > 179 ) = angles(angles > 179) - 179;
+    angles(angles <  0) = angles(angles < 0) + 179;
                             
     % the magnitude of the gradient - arranged by cell
     magGradient = sqrt(ix.*ix + iy.*iy);       
@@ -76,7 +78,7 @@ for n = 1: dataSet.Count
     % to this mag matrix, obtain the quotient and remainder
     binCentres_rows = 1 + floor(magGradient./20);
     R = 1 - rem(magGradient,20)./20;
-    votedMag = magGradient.*R;
+    votedMag_lower = magGradient.*R;
     
     
     % storage ids
@@ -85,12 +87,46 @@ for n = 1: dataSet.Count
                             [NUM_CELLS*CELL_SIZE*CELL_SIZE, 1]) - 1);
                         
     
-    storage(storage_ids) = reshape(votedMag,[NUM_CELLS*CELL_SIZE*CELL_SIZE, 1]);
+    storage(storage_ids) = reshape(votedMag_lower,...
+                            [NUM_CELLS*CELL_SIZE*CELL_SIZE, 1]);
+    % clear storage
+    
+    storage  = 0;
+    
     accBins = sum(storage,3);
+    storage = clearStorage;
+    
+    % do the same shit for the upper part of the bilinear interpolation
+    binCentres_rows = 2 + floor(magGradient./20);
+    R = rem(magGradient,20)./20;
+    votedMag_upper = magGradient.*R;
+    
+    % storage ids - upper part of the bilinear interpolation
+    storage_ids = NUM_CELLS*CELL_SIZE*CELL_SIZE.*(cC-1) + cR + ...
+                  NUM_CELLS.*(reshape(binCentres_rows,...
+                            [NUM_CELLS*CELL_SIZE*CELL_SIZE, 1]) - 1);
+                        
+    
+    storage(storage_ids) = reshape(votedMag_lower,...
+                            [NUM_CELLS*CELL_SIZE*CELL_SIZE, 1]);
     
     
+    tempAccBins = sum(storage,3);
+    accBins = tempAccBins + accBins;
+    storage = clearStorage;    
     
     
+    blockBins = accBins(blockLayout',:);
+    
+    blockCelled = mat2cell(blockBins,[4.*ones(BLOCKM_R*BLOCKM_R,1)],NUM_BINS);
+    tempBins = cellfun(myfun,blockCelled,'UniformOutput',0);
+    tempBins = cell2mat(tempBins);
+    hog_features  = reshape(tempBins,[1,BLOCKM_R*BLOCKM_R*4*NUM_BINS]);
+    
+    toc
+    tic
+    [u,v] = extractHOGFeatures(currImg);
+    toc
     
 
 end

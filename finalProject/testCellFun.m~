@@ -1,5 +1,0 @@
-function g = testCellFun(C)
-   
-    g  = C./sqrt(C(1,
-   
-end
