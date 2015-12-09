@@ -41,12 +41,11 @@ blockIds_spread = repmat(blockIds,1,4);
 blockIncrement_spread = repmat(blockIncrement,(BLOCKM_R)*(BLOCKM_R),1);
 blockLayout = blockIncrement_spread + blockIds_spread;
 
-
-
+myfun = @testCellFun;
 
 for n = 1: dataSet.Count    
     
-    
+    tic
     
     % resize a bit
     currImg = double(read(dataSet,n));
@@ -78,7 +77,6 @@ for n = 1: dataSet.Count
     R = 1 - rem(magGradient,20)./20;
     votedMag = magGradient.*R;
     
-    
     % storage ids
     storage_ids = NUM_CELLS*CELL_SIZE*CELL_SIZE.*(cC-1) + cR + ...
                   NUM_CELLS.*(reshape(binCentres_rows,...
@@ -88,10 +86,17 @@ for n = 1: dataSet.Count
     storage(storage_ids) = reshape(votedMag,[NUM_CELLS*CELL_SIZE*CELL_SIZE, 1]);
     accBins = sum(storage,3);
     
+    blockBins = accBins(blockLayout',:);
     
+    blockCelled = mat2cell(blockBins,[4.*ones(BLOCKM_R*BLOCKM_R,1)],NUM_BINS);
+    tempBins = cellfun(myfun,blockCelled,'UniformOutput',0);
+    tempBins = cell2mat(tempBins);
+    hog_features  = reshape(tempBins,[1,BLOCKM_R*BLOCKM_R*4*NUM_BINS]);
     
+    toc
+    tic
+    [u,v] = extractHOGFeatures(currImg);
+    toc
     
-    
-
 end
 
